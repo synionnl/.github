@@ -1,0 +1,69 @@
+name: BUILD & DEPLOY
+
+on: [push, pull_request]
+
+jobs:
+
+  build:
+
+    env:
+      RESOURCE_GROUP: synion
+      STORAGE_ACCOUNT: synionstorage
+      STORAGE_CONTAINER: docs-synion-nl
+      CDN_PROFILE: synion-cdn
+      CDN_ENDPOINT: docs-synion-www
+      STORAGE_BUCKET: TODO-ADD-YOUR-NAME-HERE
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v2
+        with:
+          path: main
+
+      - name: Checkout md-docs repo
+        uses: actions/checkout@v2
+        with:
+          repository: arjangeertsema/living-documentation
+          path: md-docs
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.x'
+
+      - name: Install md-docs
+        working-directory: md-docs
+        run: |
+          npm install
+          npm link
+
+      - name: Build website
+        working-directory: main
+        run: md-docs
+
+      - name: Upload to blob storage
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.0.72
+          inlineScript: |
+            az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" -d "$STORAGE_CONTAINER/$STORAGE_BUCKET" -s "./main/dist"
+      
+      - name: Purge CDN endpoint
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.0.72
+          inlineScript: |
+            az cdn endpoint purge --content-paths  "/$STORAGE_BUCKET/*" --profile-name "$CDN_PROFILE" --name "$CDN_ENDPOINT" --resource-group "$RESOURCE_GROUP"
+      
+      - name: Azure logout
+        run: |
+          az logout
+        if: always()
+

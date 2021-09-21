@@ -1,0 +1,5 @@
+{
+  "name": "Build and deploy living documentation",
+  "description": "GitHub workflow template to build and deploy living documentation websites.",
+  "iconName": "build-and-deploy-living-documentation"
+}
