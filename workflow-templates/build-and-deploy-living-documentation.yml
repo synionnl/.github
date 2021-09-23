@@ -61,7 +61,15 @@ jobs:
           azcliversion: 2.0.72
           inlineScript: |
             az cdn endpoint purge --content-paths  "/$STORAGE_BUCKET/*" --profile-name "$CDN_PROFILE" --name "$CDN_ENDPOINT" --resource-group "$RESOURCE_GROUP"
-      
+
+      - name: Get feature directories
+        id: feature-directories
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.0.72
+          inlineScript: |
+            az storage blob directory list -c "$STORAGE_CONTAINER"  -d "$STORAGE_BUCKET" --account-name "$STORAGE_ACCOUNT" --delimiter '/' --query '[].name | [?ends_with(@, `/`)] | [?starts_with(@, `$STORAGE_BUCKET/x-`)]' --output json
+
       - name: Azure logout
         run: |
           az logout
