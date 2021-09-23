@@ -53,7 +53,14 @@ jobs:
         with:
           azcliversion: 2.0.72
           inlineScript: |
-            az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" -d "$STORAGE_CONTAINER/$STORAGE_BUCKET" -s "./main/dist"
+            az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" -d "$STORAGE_CONTAINER/$STORAGE_BUCKET" -s "./main/dist"      
+
+      - name: Prune feature branches
+        uses: synionnl/prune-features@v0.1
+        with:
+          storage-account: "$STORAGE_ACCOUNT"
+          storage-container: "$STORAGE_CONTAINER"
+          bucket: "$STORAGE_BUCKET"
       
       - name: Purge CDN endpoint
         uses: azure/CLI@v1
