@@ -25,7 +25,7 @@ jobs:
       - name: Checkout md-docs repo
         uses: actions/checkout@v2
         with:
-          repository: arjangeertsema/living-documentation
+          repository: synionnl/living-documentation
           path: md-docs
 
       - name: Azure login
