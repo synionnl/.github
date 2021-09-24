@@ -1,6 +1,6 @@
 name: BUILD & DEPLOY
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
 
@@ -12,7 +12,7 @@ jobs:
       STORAGE_CONTAINER: docs-synion-nl
       CDN_PROFILE: synion-cdn
       CDN_ENDPOINT: docs-synion-www
-      STORAGE_BUCKET: TODO-ADD-YOUR-NAME-HERE
+      STORAGE_BUCKET: TODO-ADD-YOUR-BUCKET-HERE
 
     runs-on: ubuntu-latest
 
@@ -45,8 +45,12 @@ jobs:
           npm link
 
       - name: Build website
+        id: build-website
         working-directory: main
-        run: md-docs
+        run: |
+          md-docs
+          JSON=$(cat ./dist/branches.json)
+          echo "::set-output name=branches::${JSON//'%'/'%25'}"
 
       - name: Upload to blob storage
         uses: azure/CLI@v1
@@ -56,11 +60,12 @@ jobs:
             az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" -d "$STORAGE_CONTAINER/$STORAGE_BUCKET" -s "./main/dist"      
 
       - name: Prune feature branches
-        uses: synionnl/prune-features@v0.1
+        uses: synionnl/prune-features@main
         with:
-          storage-account: "$STORAGE_ACCOUNT"
-          storage-container: "$STORAGE_CONTAINER"
-          bucket: "$STORAGE_BUCKET"
+          storage-account: ${{ env.STORAGE_ACCOUNT }}
+          storage-container: ${{ env.STORAGE_CONTAINER }}
+          bucket: ${{ env.STORAGE_BUCKET }}
+          branches: ${{ steps.build-website.outputs.branches }}
       
       - name: Purge CDN endpoint
         uses: azure/CLI@v1
@@ -69,16 +74,7 @@ jobs:
           inlineScript: |
             az cdn endpoint purge --content-paths  "/$STORAGE_BUCKET/*" --profile-name "$CDN_PROFILE" --name "$CDN_ENDPOINT" --resource-group "$RESOURCE_GROUP"
 
-      - name: Get feature directories
-        id: feature-directories
-        uses: azure/CLI@v1
-        with:
-          azcliversion: 2.0.72
-          inlineScript: |
-            az storage blob directory list -c "$STORAGE_CONTAINER"  -d "$STORAGE_BUCKET" --account-name "$STORAGE_ACCOUNT" --delimiter '/' --query '[].name | [?ends_with(@, `/`)] | [?starts_with(@, `$STORAGE_BUCKET/x-`)]' --output json
-
       - name: Azure logout
+        if: always()
         run: |
           az logout
-        if: always()
-
