@@ -17,10 +17,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout git repo
         uses: actions/checkout@v2
         with:
           path: main
+
+      - uses: octokit/request-action@v2.x
+        id: get-branches
+        with:
+          route: GET /repos/${{ github.repository }}/branches
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout md-docs repo
         uses: actions/checkout@v2
@@ -52,12 +60,29 @@ jobs:
           JSON=$(cat ./dist/branches.json)
           echo "::set-output name=branches::${JSON//'%'/'%25'}"
 
+      # - name: Build websites
+      #   working-directory: main
+      #   run: |
+      #     git fetch
+      #     for branch in $(echo "${{ steps.build-website.outputs.branches }}" | jq -r 'sort_by(.path) | .[].name')
+      #     do
+      #         git checkout "$branch"
+      #         md-docs
+      #     done
+
+      # - name: Delete bucket
+      #   uses: azure/CLI@v1
+      #   with:
+      #     azcliversion: 2.0.72
+      #     inlineScript: |
+      #       az storage blob directory delete -c "$STORAGE_CONTAINER" -d "$STORAGE_BUCKET" --account-name "$STORAGE_ACCOUNT" --recursive
+
       - name: Upload to blob storage
         uses: azure/CLI@v1
         with:
           azcliversion: 2.0.72
           inlineScript: |
-            az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" -d "$STORAGE_CONTAINER/$STORAGE_BUCKET" -s "./main/dist"      
+            az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" -d "$STORAGE_CONTAINER/$STORAGE_BUCKET" -s "./main/dist"
 
       - name: Prune feature branches
         uses: synionnl/prune-features@main
