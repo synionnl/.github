@@ -52,30 +52,32 @@ jobs:
           npm install
           npm link
 
-      - name: Build website
-        id: build-website
+      - name: Build branches
+        id: branches
         working-directory: main
         run: |
-          md-docs
-          JSON=$(cat ./dist/branches.json)
-          echo "::set-output name=branches::${JSON//'%'/'%25'}"
+          md-docs -b
+          BRANCHES=$(cat ./dist/branches.json)
+          echo "::set-output name=value::${BRANCHES//'%'/'%25'}"
 
-      # - name: Build websites
-      #   working-directory: main
-      #   run: |
-      #     git fetch
-      #     for branch in $(echo "${{ steps.build-website.outputs.branches }}" | jq -r 'sort_by(.path) | .[].name')
-      #     do
-      #         git checkout "$branch"
-      #         md-docs
-      #     done
+      - name: Build websites
+        working-directory: main
+        run: |
+          git fetch
+          for B in $(echo $BRANCHES | jq -r 'sort_by(.path) | .[].name')
+          do
+              git checkout "$B"
+              md-docs
+          done
+        env:
+          BRANCHES: ${{ steps.branches.outputs.value }}
 
-      # - name: Delete bucket
-      #   uses: azure/CLI@v1
-      #   with:
-      #     azcliversion: 2.0.72
-      #     inlineScript: |
-      #       az storage blob directory delete -c "$STORAGE_CONTAINER" -d "$STORAGE_BUCKET" --account-name "$STORAGE_ACCOUNT" --recursive
+      - name: Delete bucket
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.0.72
+          inlineScript: |
+            az storage blob directory delete -c "$STORAGE_CONTAINER" -d "$STORAGE_BUCKET" --account-name "$STORAGE_ACCOUNT" --recursive
 
       - name: Upload to blob storage
         uses: azure/CLI@v1
@@ -84,13 +86,13 @@ jobs:
           inlineScript: |
             az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" -d "$STORAGE_CONTAINER/$STORAGE_BUCKET" -s "./main/dist"
 
-      - name: Prune feature branches
-        uses: synionnl/prune-features@main
-        with:
-          storage-account: ${{ env.STORAGE_ACCOUNT }}
-          storage-container: ${{ env.STORAGE_CONTAINER }}
-          bucket: ${{ env.STORAGE_BUCKET }}
-          branches: ${{ steps.build-website.outputs.branches }}
+      # - name: Prune feature branches
+      #   uses: synionnl/prune-features@main
+      #   with:
+      #     storage-account: ${{ env.STORAGE_ACCOUNT }}
+      #     storage-container: ${{ env.STORAGE_CONTAINER }}
+      #     bucket: ${{ env.STORAGE_BUCKET }}
+      #     branches: ${{ steps.build-website.outputs.branches }}
       
       - name: Purge CDN endpoint
         uses: azure/CLI@v1
