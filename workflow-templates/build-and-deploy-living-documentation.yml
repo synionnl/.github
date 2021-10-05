@@ -85,3 +85,8 @@ jobs:
         if: always()
         run: |
           az logout
+
+      - name: Uninstall md-docs
+        working-directory: md-docs
+        run: |
+          npm unlink
