@@ -12,7 +12,7 @@ jobs:
       STORAGE_CONTAINER: docs-synion-nl
       CDN_PROFILE: synion-cdn
       CDN_ENDPOINT: docs-synion-www
-      STORAGE_BUCKET: TODO-ADD-YOUR-BUCKET-HERE
+      STORAGE_BUCKET: TODO-ADD-YOUR-BUCKET-HERE_OR-REMOVE
 
     runs-on: ubuntu-latest
 
@@ -73,13 +73,28 @@ jobs:
           BRANCHES: ${{ steps.branches.outputs.value }}
 
       - name: Deploy to Azure
+        if: env.STORAGE_BUCKET == null || env.STORAGE_BUCKET == ''
         uses: azure/CLI@v1
         with:
           inlineScript: |
+            az account show
             az config set extension.use_dynamic_install=yes_without_prompt
-            az storage blob directory delete -c "$STORAGE_CONTAINER" -d "$STORAGE_BUCKET" --account-name "$STORAGE_ACCOUNT" --recursive
-            az storage blob upload-batch --account-name "$STORAGE_ACCOUNT" -d "$STORAGE_CONTAINER/$STORAGE_BUCKET" -s "./main/dist"
-            az cdn endpoint purge --content-paths  "/$STORAGE_BUCKET/*" --profile-name "$CDN_PROFILE" --name "$CDN_ENDPOINT" --resource-group "$RESOURCE_GROUP"
+            az storage container create -n "$STORAGE_CONTAINER" --account-name "$STORAGE_ACCOUNT" --public-access blob
+            az storage azcopy blob delete -c "$STORAGE_CONTAINER" --account-name "$STORAGE_ACCOUNT" --recursive
+            az storage azcopy blob upload -c "$STORAGE_CONTAINER" -s "./main/dist/*" --account-name "$STORAGE_ACCOUNT" --recursive
+            az cdn endpoint purge --content-paths  "/*" --profile-name "$CDN_PROFILE" --name "$CDN_ENDPOINT" --resource-group "$RESOURCE_GROUP"
+
+      - name: Deploy Bucket to Azure
+        if: env.STORAGE_BUCKET != null && env.STORAGE_BUCKET != ''
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az account show
+            az config set extension.use_dynamic_install=yes_without_prompt
+            az storage container create -n "$STORAGE_CONTAINER" --account-name "$STORAGE_ACCOUNT" --public-access blob
+            az storage azcopy blob delete -c "$STORAGE_CONTAINER" -t "$STORAGE_BUCKET" --account-name "$STORAGE_ACCOUNT" --recursive
+            az storage azcopy blob upload -c "$STORAGE_CONTAINER" -s "./main/dist/*" -d "$STORAGE_BUCKET" --account-name "$STORAGE_ACCOUNT" --recursive
+            az cdn endpoint purge --content-paths "/$STORAGE_BUCKET/*" --profile-name "$CDN_PROFILE" --name "$CDN_ENDPOINT" --resource-group "$RESOURCE_GROUP"
 
       - name: Azure logout
         if: always()
