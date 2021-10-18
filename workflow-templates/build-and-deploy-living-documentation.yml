@@ -30,10 +30,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Checkout md-docs repo
+      - name: Checkout md-docs-cli repo
         uses: actions/checkout@v2
         with:
-          repository: synionnl/living-documentation
+          repository: synionnl/md-docs-cli
           path: md-docs
 
       - name: Azure login
@@ -76,6 +76,7 @@ jobs:
         if: env.STORAGE_BUCKET == null || env.STORAGE_BUCKET == ''
         uses: azure/CLI@v1
         with:
+          azcliversion: 2.25.0
           inlineScript: |
             az account show
             az config set extension.use_dynamic_install=yes_without_prompt
@@ -88,6 +89,7 @@ jobs:
         if: env.STORAGE_BUCKET != null && env.STORAGE_BUCKET != ''
         uses: azure/CLI@v1
         with:
+          azcliversion: 2.25.0
           inlineScript: |
             az account show
             az config set extension.use_dynamic_install=yes_without_prompt
@@ -101,7 +103,7 @@ jobs:
         run: |
           az logout
 
-      - name: Uninstall md-docs
+      - name: Uninstall md-docs-cli
         working-directory: md-docs
         run: |
           npm unlink
