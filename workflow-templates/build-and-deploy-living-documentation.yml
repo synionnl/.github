@@ -23,18 +23,14 @@ jobs:
         with:
           path: main
 
-      - uses: octokit/request-action@v2.x
-        id: get-branches
-        with:
-          route: GET /repos/${{ github.repository }}/branches
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Checkout md-docs-cli repo
+      - name: Checkout md-docs repo
         uses: actions/checkout@v2
         with:
-          repository: synionnl/md-docs-cli
+          repository: synionnl/living-documentation
           path: md-docs
+      
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v1
 
       - name: Azure login
         uses: azure/login@v1
@@ -103,7 +99,7 @@ jobs:
         run: |
           az logout
 
-      - name: Uninstall md-docs-cli
+      - name: Uninstall md-docs
         working-directory: md-docs
         run: |
           npm unlink
