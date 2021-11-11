@@ -72,11 +72,9 @@ jobs:
         if: env.STORAGE_BUCKET == null || env.STORAGE_BUCKET == ''
         uses: azure/CLI@v1
         with:
-          azcliversion: 2.25.0
           inlineScript: |
-            az account show
             az config set extension.use_dynamic_install=yes_without_prompt
-            az storage container create -n "$STORAGE_CONTAINER" --account-name "$STORAGE_ACCOUNT" --public-access blob
+            az storage container create -n "$STORAGE_CONTAINER" --account-name "$STORAGE_ACCOUNT" --public-access container --auth-mode login
             az storage azcopy blob delete -c "$STORAGE_CONTAINER" --account-name "$STORAGE_ACCOUNT" --recursive
             az storage azcopy blob upload -c "$STORAGE_CONTAINER" -s "./main/dist/*" --account-name "$STORAGE_ACCOUNT" --recursive
             az cdn endpoint purge --content-paths  "/*" --profile-name "$CDN_PROFILE" --name "$CDN_ENDPOINT" --resource-group "$RESOURCE_GROUP"
@@ -85,11 +83,9 @@ jobs:
         if: env.STORAGE_BUCKET != null && env.STORAGE_BUCKET != ''
         uses: azure/CLI@v1
         with:
-          azcliversion: 2.25.0
           inlineScript: |
-            az account show
             az config set extension.use_dynamic_install=yes_without_prompt
-            az storage container create -n "$STORAGE_CONTAINER" --account-name "$STORAGE_ACCOUNT" --public-access blob
+            az storage container create -n "$STORAGE_CONTAINER" --account-name "$STORAGE_ACCOUNT" --public-access container --auth-mode login
             az storage azcopy blob delete -c "$STORAGE_CONTAINER" -t "$STORAGE_BUCKET" --account-name "$STORAGE_ACCOUNT" --recursive
             az storage azcopy blob upload -c "$STORAGE_CONTAINER" -s "./main/dist/*" -d "$STORAGE_BUCKET" --account-name "$STORAGE_ACCOUNT" --recursive
             az cdn endpoint purge --content-paths "/$STORAGE_BUCKET/*" --profile-name "$CDN_PROFILE" --name "$CDN_ENDPOINT" --resource-group "$RESOURCE_GROUP"
