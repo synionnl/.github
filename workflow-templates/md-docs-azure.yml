@@ -1,0 +1,30 @@
+name: Build & Deploy
+
+on: 
+  workflow_dispatch:
+  push:
+  repository_dispatch:
+    types: [test-execution-changed]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build and Deploy
+        uses: synionnl/md-docs-actions/azure@v1
+        with:
+          azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
+          resource_group: synion
+          storage_account: synionstorage
+          storage_container: docs-synion-nl
+          storage_bucket: 
+          cdn_profile: synion-cdn
+          cdn_endpoint: docs-synion-www

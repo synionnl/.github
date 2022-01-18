@@ -1,0 +1,25 @@
+name: Build & Deploy
+
+on: 
+  workflow_dispatch:
+  push:
+  repository_dispatch:
+    types: [test-execution-changed]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build and Deploy
+        uses: synionnl/md-docs-actions/github-pages@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          destination_directory: 
