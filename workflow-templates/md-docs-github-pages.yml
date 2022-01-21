@@ -1,6 +1,8 @@
-name: Build & Deploy
+name: md-docs
 
-on: 
+on:
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
   push:
   repository_dispatch:
@@ -8,7 +10,7 @@ on:
 
 jobs:
 
-  build:
+  md-docs:
 
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -18,8 +20,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Build and Deploy
-        uses: synionnl/md-docs-actions/github-pages@v1
+      - name: Download
+        uses: synionnl/md-docs-actions/azure/download@main
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          destination_directory: 
+          credentials: ${{ secrets.AZURE_CREDENTIALS }}
+          storage_account: synionstorage
+          storage_container: test-excecutions
+          github_token: ${{ github.token }}
+          repository: ${{ github.repository }}
+
+      - name: Build
+        uses: synionnl/md-docs-actions/build@main
+
+      - name: Deploy
+        uses: synionnl/md-docs-actions/github/deploy@main
+        with:
+          destination_directory: products

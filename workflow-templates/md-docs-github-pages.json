@@ -1,5 +1,5 @@
 {
-  "name": "Build and deploy",
+  "name": "md-docs GitHub pages",
   "description": "GitHub workflow template to build living documentation websites with md-docs-cli and deploy to website to GitHub pages.",
-  "iconName": "build-and-deploy-living-documentation"
+  "iconName": "md-docs-github-pages"
 }
